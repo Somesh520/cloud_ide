@@ -198,7 +198,7 @@ int main() {
             outputDiv.style.display = 'none';
 
             try {
-                const response = await fetch('http://localhost:5001/execute', {
+                const response = await fetch('https://my-cpp-compiler.onrender.com/execute', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ code, testCases })
