@@ -1,7 +1,7 @@
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 const TEMP_DIR = path.join(__dirname, 'temp');
 if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR);
@@ -18,7 +18,7 @@ function runCommand(command) {
 }
 
 async function executeCpp(code, testCases) {
-    const id = uuidv4();
+    const id = crypto.randomUUID();
     const folderPath = path.join(TEMP_DIR, id);
     fs.mkdirSync(folderPath);
 
