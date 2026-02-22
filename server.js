@@ -9,6 +9,11 @@ const PORT = 5001;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Serve the frontend
+app.get('/', (res, send) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.post('/execute', async (req, res) => {
     const { code, testCases } = req.body;
 
