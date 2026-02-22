@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberCompiler | Docker Execution</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --bg-dark: #050505;
+            --glass-bg: rgba(20, 20, 20, 0.8);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(to bottom, transparent 90%, var(--neon-blue) 100%);
+            background-size: 100% 100%, 100% 5px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            background: var(--glass-bg);
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .editor-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        textarea {
+            background: #000;
+            color: #0f0;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid var(--neon-pink);
+            padding: 15px;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+            resize: vertical;
+            min-height: 300px;
+        }
+
+        .inputs-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .test-case {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        input {
+            background: #111;
+            border: 1px solid #444;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        button {
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            margin-top: 20px;
+            align-self: center;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--neon-pink);
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            display: none;
+        }
+
+        .passed {
+            color: #00ff00;
+        }
+
+        .failed {
+            color: #ff0000;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: var(--neon-blue);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>CyberCompiler v1.0</h1>
+
+        <div class="editor-section">
+            <label>C++ Source Code</label>
+            <textarea id="code" placeholder="// Write your C++ code here...
+#include <iostream>
+using namespace std;
+
+int main() {
+    int a, b;
+    cin >> a >> b;
+    cout << a + b;
+    return 0;
+}"></textarea>
+
+            <div class="inputs-container" id="testCasesContainer">
+                <label>Test Cases (Input | Expected Output)</label>
+                <div class="test-case">
+                    <input type="text" placeholder="Input (e.g. 5 10)" class="tc-input" value="5 10">
+                    <input type="text" placeholder="Expected (e.g. 15)" class="tc-output" value="15">
+                </div>
+                <div class="test-case">
+                    <input type="text" placeholder="Input (e.g. 20 30)" class="tc-input" value="20 30">
+                    <input type="text" placeholder="Expected (e.g. 50)" class="tc-output" value="50">
+                </div>
+            </div>
+
+            <button onclick="runCode()">Execute in Docker</button>
+        </div>
+
+        <div class="loading" id="loading">EXECUTING IN DOCKER...</div>
+        <div class="results" id="output"></div>
+    </div>
+
+    <script>
+        async function runCode() {
+            const code = document.getElementById('code').value;
+            const inputs = document.querySelectorAll('.tc-input');
+            const outputs = document.querySelectorAll('.tc-output');
+            const loading = document.getElementById('loading');
+            const outputDiv = document.getElementById('output');
+
+            const testCases = [];
+            inputs.forEach((input, i) => {
+                testCases.push({
+                    input: input.value,
+                    output: outputs[i].value
+                });
+            });
+
+            loading.style.display = 'block';
+            outputDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('http://localhost:5001/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, testCases })
+                });
+
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                outputDiv.innerHTML = `<p style="color:red">Error connecting to backend: ${error.message}</p>`;
+                outputDiv.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayResults(data) {
+            const outputDiv = document.getElementById('output');
+            outputDiv.style.display = 'block';
+
+            if (!data.success) {
+                outputDiv.innerHTML = `<h3>Status: <span class="failed">FAILED</span></h3>
+                                  <pre style="color:red">${data.details || 'Unknown Error'}</pre>`;
+                return;
+            }
+
+            let html = `<h3>Execution Results</h3>`;
+            data.results.forEach(res => {
+                html += `
+                <div style="border-bottom: 1px solid #333; padding: 10px 0;">
+                    <p>Test Case ${res.id}: <span class="${res.passed ? 'passed' : 'failed'}">${res.passed ? 'SUCCESSFUL' : 'FAILED'}</span></p>
+                    <p>Input: <code>${res.input}</code></p>
+                    <p>Expected: <code>${res.expected}</code> | Actual: <code>${res.actual}</code></p>
+                </div>
+            `;
+            });
+            outputDiv.innerHTML = html;
+        }
+    </script>
+
+</body>
+
+</html>
