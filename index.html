@@ -171,20 +171,44 @@ int main() {
                 </div>
             </div>
 
-            <button onclick="runCode()">Execute in Docker</button>
+            <button type="button" onclick="runCode()">Execute in Docker</button>
         </div>
 
-        <div class="loading" id="loading">EXECUTING IN DOCKER...</div>
+        <div class="loading" id="loading">EXECUTING IN CLOUD...</div>
         <div class="results" id="output"></div>
     </div>
 
     <script>
+        // Load saved state on startup
+        window.onload = () => {
+            const savedCode = localStorage.getItem('cyber_code');
+            if (savedCode) document.getElementById('code').value = savedCode;
+
+            const savedInputs = JSON.parse(localStorage.getItem('cyber_inputs') || '[]');
+            const savedOutputs = JSON.parse(localStorage.getItem('cyber_outputs') || '[]');
+
+            const inputs = document.querySelectorAll('.tc-input');
+            const outputs = document.querySelectorAll('.tc-output');
+
+            inputs.forEach((input, i) => {
+                if (savedInputs[i]) input.value = savedInputs[i];
+                if (savedOutputs[i]) outputs[i].value = savedOutputs[i];
+            });
+        };
+
         async function runCode() {
             const code = document.getElementById('code').value;
             const inputs = document.querySelectorAll('.tc-input');
             const outputs = document.querySelectorAll('.tc-output');
             const loading = document.getElementById('loading');
             const outputDiv = document.getElementById('output');
+
+            // Save state to localStorage
+            localStorage.setItem('cyber_code', code);
+            const inputValues = Array.from(inputs).map(i => i.value);
+            const outputValues = Array.from(outputs).map(o => o.value);
+            localStorage.setItem('cyber_inputs', JSON.stringify(inputValues));
+            localStorage.setItem('cyber_outputs', JSON.stringify(outputValues));
 
             const testCases = [];
             inputs.forEach((input, i) => {
